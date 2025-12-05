@@ -1,7 +1,7 @@
 .PHONY: up down test lint
 
 up:
-	docker compose up -d
+	docker compose up --build -d
 
 down:
 	docker compose down
@@ -11,4 +11,3 @@ test:
 
 lint:
 	ruff check .
-

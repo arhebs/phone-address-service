@@ -2,7 +2,8 @@ FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    POETRY_VIRTUALENVS_CREATE=false
+    POETRY_VIRTUALENVS_CREATE=false \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -18,4 +19,3 @@ COPY . .
 
 # Default command runs the FastAPI app with Uvicorn
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
