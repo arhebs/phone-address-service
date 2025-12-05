@@ -3,7 +3,34 @@
 import json
 import logging
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
+
+_STANDARD_LOG_RECORD_ATTRS: Mapping[str, None] = {
+    # Core attributes
+    "name": None,
+    "msg": None,
+    "args": None,
+    "levelname": None,
+    "levelno": None,
+    "pathname": None,
+    "filename": None,
+    "module": None,
+    "exc_info": None,
+    "exc_text": None,
+    "stack_info": None,
+    "lineno": None,
+    "funcName": None,
+    "created": None,
+    "msecs": None,
+    "relativeCreated": None,
+    "thread": None,
+    "threadName": None,
+    "process": None,
+    "processName": None,
+    # Derived / convenience attributes
+    "message": None,
+    "asctime": None,
+}
 
 
 class JSONFormatter(logging.Formatter):
@@ -20,8 +47,20 @@ class JSONFormatter(logging.Formatter):
         # Include basic contextual information when available.
         if record.exc_info:
             log_record["exc_info"] = self.formatException(record.exc_info)
-        if hasattr(record, "extra") and isinstance(record.extra, dict):
-            log_record.update(record.extra)
+
+        # Capture any extra fields that were attached via the `extra` parameter.
+        # The logging module merges these into the record's __dict__, so we
+        # collect keys that are not part of the standard LogRecord attributes.
+        for key, value in record.__dict__.items():
+            if key in _STANDARD_LOG_RECORD_ATTRS:
+                continue
+            if key in log_record:
+                # Do not allow extras to override the core fields above.
+                continue
+            if key.startswith("_"):
+                # Skip private/internal attributes.
+                continue
+            log_record[key] = value
 
         return json.dumps(log_record, ensure_ascii=False)
 
