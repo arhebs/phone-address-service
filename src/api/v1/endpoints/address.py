@@ -1,6 +1,6 @@
 """Address management endpoints for version 1 of the API."""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Path, status
 from redis.asyncio import Redis
 
 from src.core.deps import get_redis
@@ -15,13 +15,21 @@ from src.services.address_service import AddressService
 router = APIRouter(prefix="/v1/address", tags=["address"])
 
 
+def valid_phone_path(
+        phone: str = Path(..., description="Phone number for the address mapping."),
+) -> PhonePathParam:
+    """Validate and normalize a phone path parameter using PhonePathParam."""
+
+    return PhonePathParam(phone=phone)
+
+
 @router.get(
     "/{phone}",
     response_model=AddressResponse,
     status_code=status.HTTP_200_OK,
 )
 async def get_address(
-        phone_param: PhonePathParam = Depends(),
+        phone_param: PhonePathParam = Depends(valid_phone_path),
         redis: Redis = Depends(get_redis),
 ) -> AddressResponse:
     """Retrieve the address associated with the given phone number."""
@@ -52,15 +60,11 @@ async def create_address(
     status_code=status.HTTP_200_OK,
 )
 async def update_address(
-        phone_param: PhonePathParam = Depends(),
-        payload: AddressUpdate | None = None,
+        payload: AddressUpdate,
+        phone_param: PhonePathParam = Depends(valid_phone_path),
         redis: Redis = Depends(get_redis),
 ) -> AddressResponse:
     """Update an existing phone→address mapping."""
-
-    # payload is required, but annotated as optional to keep FastAPI type hints
-    # flexible in case of future validation changes.
-    assert payload is not None
     service = AddressService(redis)
     await service.update(phone=phone_param.phone, address=payload.address)
     return AddressResponse(phone=phone_param.phone, address=payload.address)
@@ -71,7 +75,7 @@ async def update_address(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_address(
-        phone_param: PhonePathParam = Depends(),
+        phone_param: PhonePathParam = Depends(valid_phone_path),
         redis: Redis = Depends(get_redis),
 ) -> None:
     """Delete an existing phone→address mapping."""
