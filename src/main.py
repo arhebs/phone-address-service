@@ -3,11 +3,15 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
+from .api.health import router as health_router
+from .api.v1.endpoints.address import router as address_router
 from .core.config import get_settings
 from .core.database import get_redis_client
+from .core.exceptions import EntityAlreadyExists, EntityNotFound
 from .core.logging import configure_logging
 
 
@@ -37,3 +41,31 @@ app = FastAPI(
     description="Strict REST + Atomic Redis",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(EntityAlreadyExists)
+async def handle_entity_already_exists(
+        request: Request, exc: EntityAlreadyExists
+) -> JSONResponse:
+    """Map EntityAlreadyExists to HTTP 409 Conflict."""
+
+    return JSONResponse(
+        status_code=409,
+        content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(EntityNotFound)
+async def handle_entity_not_found(
+        request: Request, exc: EntityNotFound
+) -> JSONResponse:
+    """Map EntityNotFound to HTTP 404 Not Found."""
+
+    return JSONResponse(
+        status_code=404,
+        content={"detail": str(exc)},
+    )
+
+
+app.include_router(health_router)
+app.include_router(address_router)
