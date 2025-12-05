@@ -131,6 +131,29 @@ Commands:
 
 ---
 
+## QA & Verification
+
+- Run the automated integration tests:
+
+  ```bash
+  make test
+  ```
+
+- Run the full manual QA checklist script (wraps the behavior described above):
+
+  ```bash
+  ./qa_manual.sh
+  ```
+
+  This script will:
+    - Build and start the stack.
+    - Exercise all endpoints via `curl`.
+    - Verify strict REST semantics and Redis persistence across restarts.
+    - Run `make test`.
+    - Tear down the stack at the end.
+
+---
+
 ## Example Requests
 
 Create a mapping:
