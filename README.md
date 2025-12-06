@@ -53,12 +53,15 @@ Base path: `/`
 
 ## Phone Normalization & Validation
 
-All phone inputs (body and path) are normalized by a shared helper:
+All phone inputs (body and path) are normalized by a shared helper that uses
+Google's libphonenumber (`phonenumbers` package) to:
 
-- Strip all non-digit characters.
-- Require **7–15 digits** (inclusive).
-    - Example: `+1 (555) 123-4567` → `15551234567`.
-    - Example: `123-4567` → `1234567`.
+- Parse the phone number (using **US** as the default region when no country
+  code is provided, while still supporting fully-qualified international
+  numbers starting with `+`).
+- Validate the parsed number using libphonenumber's rules.
+- Format the number into **E.164** format, e.g.:
+    - `+1 (202) 555-0001` → `+12025550001`.
 - If invalid, validation fails and FastAPI returns **422 Unprocessable Entity**.
 
 Normalization is implemented in:
@@ -77,6 +80,23 @@ Prerequisites:
 - Docker
 - docker-compose
 - GNU Make (for the provided shortcuts)
+
+Configuration:
+
+- The application expects the following environment variables (or a `.env` file)
+  for Redis configuration:
+    - `APP_REDIS_HOST` (**required**)
+    - `APP_REDIS_PORT` (default: `6379`)
+    - `APP_REDIS_DB` (default: `0`)
+- In Docker, these are set via `docker-compose.yml` (e.g. `APP_REDIS_HOST=redis`).
+- For local development and tests, you can create a `.env` file in the project
+  root, for example:
+
+  ```env
+  APP_REDIS_HOST=localhost
+  APP_REDIS_PORT=6379
+  APP_REDIS_DB=0
+  ```
 
 Commands:
 
@@ -107,6 +127,13 @@ Commands:
 
   ```bash
   make lint
+  ```
+
+- To run only the **unit tests** (e.g., the service layer tests that do not
+  require a running Redis instance), you can run:
+
+  ```bash
+  pytest tests/unit
   ```
 
 ---
@@ -161,19 +188,19 @@ Create a mapping:
 ```bash
 curl -X POST http://localhost:8000/v1/address \
   -H "Content-Type: application/json" \
-  -d '{"phone": "+1 (555) 123-4567", "address": "123 Main St"}'
+  -d '{"phone": "+1 (202) 555-0001", "address": "123 Main St"}'
 ```
 
 Get a mapping:
 
 ```bash
-curl http://localhost:8000/v1/address/+1%20(555)%20123-4567
+curl http://localhost:8000/v1/address/+1%20(202)%20555-0001
 ```
 
 Update a mapping:
 
 ```bash
-curl -X PUT http://localhost:8000/v1/address/15551234567 \
+curl -X PUT http://localhost:8000/v1/address/+12025550001 \
   -H "Content-Type: application/json" \
   -d '{"address": "456 Elm St"}'
 ```
@@ -181,7 +208,7 @@ curl -X PUT http://localhost:8000/v1/address/15551234567 \
 Delete a mapping:
 
 ```bash
-curl -X DELETE http://localhost:8000/v1/address/15551234567
+curl -X DELETE http://localhost:8000/v1/address/+12025550001
 ```
 
 Health check:

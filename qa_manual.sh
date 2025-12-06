@@ -102,7 +102,7 @@ echo "  (Manually verify logs are JSON-structured if desired.)"
 
 info "2. Validation & Normalization – Valid Complex Phone Number"
 
-complex_payload='{"phone": "+1 (555) 000-0001", "address": "Clean Me St"}'
+complex_payload='{"phone": "+1 (202) 555-0001", "address": "Clean Me St"}'
 tmp_body="$(mktemp)"
 status="$(curl -s -o "$tmp_body" -w "%{http_code}" \
   -H "Content-Type: application/json" \
@@ -119,7 +119,7 @@ fi
 
 body="$(cat "$tmp_body")"
 rm -f "$tmp_body"
-assert_body_contains '"phone":"15550000001"' "Valid complex phone normalization" "$body"
+assert_body_contains '"phone":"+12025550001"' "Valid complex phone normalization" "$body"
 pass "Valid complex phone normalization OK"
 
 info "2. Validation – Phone Too Short (expect 422)"
@@ -142,9 +142,9 @@ assert_http 422 "Phone too long" \
 # 3. Core Business Logic (CRUD & Strict REST)
 ###############################################################################
 
-PHONE_MAIN="9990001"
-NON_EXISTENT_PHONE="0000000"
-NON_EXISTENT_UPDATE_PHONE="8888888"
+PHONE_MAIN="+12025550010"
+NON_EXISTENT_PHONE="+12025550011"
+NON_EXISTENT_UPDATE_PHONE="+12025550012"
 
 info "3A. Creation – Create New Record"
 create_payload_main='{"phone": "'"$PHONE_MAIN"'", "address": "Original Address"}'
@@ -228,7 +228,7 @@ assert_http 404 "Delete non-existent record" \
 # 4. Persistence & Durability (AOF check)
 ###############################################################################
 
-PERSIST_PHONE="5551112222"
+PERSIST_PHONE="+12025550020"
 
 info "4. Persistence – Create Data to Persist"
 persist_payload='{"phone": "'"$PERSIST_PHONE"'", "address": "Persist St"}'

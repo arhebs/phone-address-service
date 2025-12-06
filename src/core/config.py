@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,7 +15,9 @@ class Settings(BaseSettings):
       * APP_REDIS_DB
     """
 
-    redis_host: str = "localhost"
+    # Removing the default makes this required; the app will fail fast if
+    # APP_REDIS_HOST is not provided in the environment or .env file.
+    redis_host: str = Field(..., description="Redis hostname is required")
     redis_port: int = 6379
     redis_db: int = 0
 
@@ -28,6 +31,5 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Return a cached Settings instance."""
-
+    # noinspection PyArgumentList
     return Settings()
-

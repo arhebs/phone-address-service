@@ -47,11 +47,14 @@ app = FastAPI(
 async def handle_entity_already_exists(
         request: Request, exc: EntityAlreadyExists
 ) -> JSONResponse:
-    """Map EntityAlreadyExists to HTTP 409 Conflict."""
+    """Map EntityAlreadyExists to a sanitized HTTP 409 Conflict response."""
 
     return JSONResponse(
         status_code=409,
-        content={"detail": str(exc)},
+        content={
+            "error": "conflict",
+            "message": "A record with this phone number already exists.",
+        },
     )
 
 
@@ -59,11 +62,14 @@ async def handle_entity_already_exists(
 async def handle_entity_not_found(
         request: Request, exc: EntityNotFound
 ) -> JSONResponse:
-    """Map EntityNotFound to HTTP 404 Not Found."""
+    """Map EntityNotFound to a sanitized HTTP 404 Not Found response."""
 
     return JSONResponse(
         status_code=404,
-        content={"detail": str(exc)},
+        content={
+            "error": "not_found",
+            "message": "The requested phone number was not found.",
+        },
     )
 
 
